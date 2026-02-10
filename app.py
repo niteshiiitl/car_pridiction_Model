@@ -254,3 +254,4 @@ else:
 # Footer
 st.markdown("---")
 st.markdown("*Powered by Advanced ML | Updated " + datetime.now().strftime("%B %Y") + "*")
+st.markdown("* Created By Nitesh Kumar *")
