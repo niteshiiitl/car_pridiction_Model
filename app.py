@@ -54,18 +54,17 @@ if model is None:
 
 # Enhanced Sidebar with tabs
 st.sidebar.title("Vehicle Specifications")
-tab1, tab2 = st.sidebar.tabs(["Basic Info", "Advanced Settings"])
+st.sidebar.subheader("Basic Info")
+year = st.sidebar.slider('Manufacturing Year', 2000, 2025, 2016)
+present_price = st.sidebar.number_input('current Ex showroom price (lakhs)', 0.0, 50.0, 5.0,0.1)
+km_driven = st.sidebar.number_input('kilometers Driven', 0,500000,50000,1000)
 
-with tab1:
-    year = st.slider('Manufacturing Year', 1995, 2026, 2020)
-    present_price = st.number_input('Original Ex-Showroom Price (Lakhs)', 0.0, 100.0, 7.5, 0.05)
-    kms_driven = st.number_input('KMs Driven', 0, 1000000, 45000, 5000)
+st.sidebar.subheader("Car Spacification")
 
-with tab2:
-    fuel_type = st.selectbox('Fuel Type', ['Petrol', 'Diesel', 'CNG', 'LPG', 'Electric'])
-    seller_type = st.selectbox('Seller Type', ['Individual', 'Dealer', 'Trusted Dealer'])
-    transmission = st.selectbox('Transmission', ['Manual', 'Automatic', 'AMT'])
-    owner = st.selectbox('Previous Owners', [0, 1, 2, '3+'])
+fuel_type = st.sidebar.selectbox('Fuel Type', ['Petrol', 'Diesel', 'CNG', 'LPG'])
+seller_type = st.sidebar.selectbox('Seller Type', ['Individual', 'Dealer'])
+transmission = st.sidebar.selectbox('Transmission', ['Manual', 'Automatic'])
+owner = st.sidebar.selectbox('Previous Owners', [0, 1, 2, 3])
 
 # Dynamic car age calculation
 current_year = datetime.now().year
@@ -73,29 +72,25 @@ car_age = current_year - year
 
 # Enhanced prediction button
 st.sidebar.markdown("---")
-if st.sidebar.button("Predict Market Value", type="primary", use_container_width=True, help="Click to get AI-powered valuation"):
+predict_btn = st.sidebar.button("get price estimate", type = "primary, use_container_width =true)
 
+ if predict_btn:                               
     # Advanced encoding with error handling
-    fuel_mapping = {'Petrol': 0, 'Diesel': 1, 'CNG': 2, 'LPG': 3, 'Electric': 4}
-    seller_mapping = {'Individual': 0, 'Dealer': 1, 'Trusted Dealer': 2}
-    trans_mapping = {'Manual': 0, 'Automatic': 1, 'AMT': 2}
+    fuel_encoded = {'Petrol': 0, 'Diesel': 1, 'CNG': 2}[fuel_type]
+    seller_encoded = {'Individual': 1, 'Dealer': 0}[seller_type]
+    transmission_encoded = {'Manual': 0, 'Automatic': 1}[transmission]
     
-    try:
-        fuel_encoded = fuel_mapping[fuel_type]
-        seller_encoded = seller_mapping[seller_type]
-        trans_encoded = trans_mapping[transmission]
-        owner_encoded = 3 if owner == '3+' else int(owner)
         
-        # Prepare enhanced input features
-        input_df = pd.DataFrame({
-            'year': [year],
-            'present_price': [present_price],
-            'kms_driven': [kms_driven],
-            'fuel_type': [fuel_encoded],
-            'seller_type': [seller_encoded],
-            'transmission': [trans_encoded],
-            'owner': [owner_encoded],
-            'car_age': [car_age]
+     # Prepare enhanced input features
+    input_df = pd.DataFrame({
+            'Year': [year],
+            'Present_price': [present_price],
+            'Kms_driven': [kms_driven],
+            'Fuel_type': [fuel_encoded],
+            'Seller_type': [seller_encoded],
+            'Transmission': [transmission_encoded],
+            'Owner': [owner],
+            
         })
         
         # Prediction with confidence interval simulation
@@ -108,10 +103,10 @@ if st.sidebar.button("Predict Market Value", type="primary", use_container_width
         depreciation_pct = (depreciation_amount / present_price * 100) if present_price > 0 else 0
         
         # Results Section
-        st.markdown("## Valuation Results")
+        st.markdown("----")
         
         # KPI Metrics with enhanced styling
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             st.metric("Market Value", f"₹{predicted_price:.1f}L", delta=f"{confidence_high-predicted_price:+.1f}L")
@@ -122,8 +117,6 @@ if st.sidebar.button("Predict Market Value", type="primary", use_container_width
         with col3:
             st.metric("Depreciation", f"₹{depreciation_amount:.1f}L", delta=f"-{depreciation_pct:.1f}%")
         
-        with col4:
-            st.metric("Confidence Range", f"₹{confidence_low:.1f}L - ₹{confidence_high:.1f}L")
         
         # Interactive Price Analysis
         st.markdown("## Market Analysis")
