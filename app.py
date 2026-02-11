@@ -57,7 +57,7 @@ st.sidebar.title("Vehicle Specifications")
 st.sidebar.subheader("Basic Info")
 year = st.sidebar.slider('Manufacturing Year', 2000, 2025, 2016)
 present_price = st.sidebar.number_input('current Ex showroom price (lakhs)', 0.0, 50.0, 5.0,0.1)
-km_driven = st.sidebar.number_input('kilometers Driven', 0,500000,50000,1000)
+kms_driven = st.sidebar.number_input('kilometers Driven', 0,500000,50000,1000)
 
 st.sidebar.subheader("Car Spacification")
 
