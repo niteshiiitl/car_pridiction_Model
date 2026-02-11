@@ -66,174 +66,199 @@ seller_type = st.sidebar.selectbox('Seller Type', ['Individual', 'Dealer'])
 transmission = st.sidebar.selectbox('Transmission', ['Manual', 'Automatic'])
 owner = st.sidebar.selectbox('Previous Owners', [0, 1, 2, 3])
 
-# Dynamic car age calculation
+# car age calculation
 current_year = datetime.now().year
 car_age = current_year - year
 
-# Enhanced prediction button
+# prediction button
 st.sidebar.markdown("---")
 predict_btn = st.sidebar.button("get price estimate", type = "primary", use_container_width =True)
 
 if predict_btn:
-    try:
-        # Advanced encoding with error handling
-        fuel_encoded = {'Petrol': 0, 'Diesel': 1, 'CNG': 2}[fuel_type]
-        seller_encoded = {'Individual': 1, 'Dealer': 0}[seller_type]
-        transmission_encoded = {'Manual': 0, 'Automatic': 1}[transmission]
-
-
-        # Prepare enhanced input features
-        input_df = pd.DataFrame({
-                'Year': [year],
-                'Present_price': [present_price],
-                'Kms_driven': [km_driven],
-                'Fuel_type': [fuel_encoded],
-                'Seller_type': [seller_encoded],
-                'Transmission': [transmission_encoded],
-                'Owner': [owner]
-
-            })
-
-            # Prediction with confidence interval simulation
-        predicted_price = model.predict(input_df)[0]
-        confidence_low = predicted_price * 0.85
-        confidence_high = predicted_price * 1.15
-
-        # Enhanced calculations
-        depreciation_amount = max(0, present_price - predicted_price)
-        depreciation_pct = (depreciation_amount / present_price * 100) if present_price > 0 else 0
-
-        # Results Section
-        st.markdown("----")
-
-        # KPI Metrics with enhanced styling
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric("Market Value", f"₹{predicted_price:.1f}L", delta=f"{confidence_high-predicted_price:+.1f}L")
-
-        with col2:
-            st.metric("Original Price", f"₹{present_price:.1f}L")
-
-        with col3:
-            st.metric("Depreciation", f"₹{depreciation_amount:.1f}L", delta=f"-{depreciation_pct:.1f}%")
-
-
-        # Interactive Price Analysis
-        st.markdown("## Market Analysis")
-        col_left, col_right = st.columns([3, 1])
-
-        with col_left:
-            st.success(f"Recommended Listing Range: ₹{confidence_low:.1f}L - ₹{confidence_high:.1f}L")
-
-            st.subheader("Key Value Drivers")
-
-            if car_age <= 3:
-                st.markdown("- Very new vehicle - minimal depreciation")
-            elif car_age <= 7:
-                st.markdown("- Good condition - strong resale value")
-            elif car_age <= 12:
-                st.markdown("- Average age - standard market value")
-            else:
-                st.markdown("- Older vehicle - expected depreciation")
-
-            if km_driven < 25000:
-                st.markdown("- Low mileage - premium pricing")
-            elif km_driven < 75000:
-                st.markdown("- Average mileage")
-            else:
-                st.markdown("- High mileage - price reduction")
-
-            if transmission != 'Manual':
-                st.markdown("- Automatic/AMT transmission - higher value")
-
-            if fuel_type == 'Electric':
-                st.markdown("- Electric vehicle - growing demand")
-            elif fuel_type == 'Diesel':
-                st.markdown("- Diesel - good for highway use")
-            else:
-                st.markdown("- Petrol/CNG - standard market")
-
-        with col_right:
-            # Advanced gauge with multiple thresholds
-            fig_gauge = go.Figure(go.Indicator(
-                mode="gauge+number+delta",
-                value=predicted_price,
-                title={'text': "Market Score"},
-                delta={'reference': present_price, 'position': "top"},
-                gauge={
-                    'axis': {'range': [None, max(present_price * 1.3, 50)]},
-                    'bar': {'color': "#10b981"},
-                    'steps': [
-                        {'range': [0, present_price*0.4], 'color': "#ef4444"},
-                        {'range': [present_price*0.4, present_price*0.8], 'color': "#f59e0b"},
-                        {'range': [present_price*0.8, present_price*1.3], 'color': "#10b981"}
-                    ],
-                    'threshold': {
-                        'line': {'color': "white", 'width': 4},
-                        'thickness': 0.75,
-                        'value': predicted_price
-                    }
+    # Encode categorical variables
+    fuel_encoded = {'Petrol': 0, 'Diesel': 1, 'CNG': 2}[fuel_type]
+    seller_encoded = {'Dealer': 0, 'Individual': 1}[seller_type]
+    transmission_encoded = {'Manual': 0, 'Automatic': 1}[transmission]
+    
+    # Prepare input
+    input_data = pd.DataFrame({
+        'Year': [year],
+        'Present_Price': [present_price],
+        'Kms_Driven': [kms_driven],
+        'Fuel_Type': [fuel_encoded],
+        'Seller_Type': [seller_encoded],
+        'Transmission': [transmission_encoded],
+        'Owner': [owner]
+    })
+    
+    # Make prediction
+    predicted_price = model.predict(input_data)[0]
+    
+    # Calculate depreciation
+    depreciation = present_price - predicted_price
+    depreciation_percent = (depreciation / present_price) * 100 if present_price > 0 else 0
+    
+    # Display results
+    st.markdown("---")
+    st.header("Price Estimation Results")
+    
+    # Main metrics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            "Estimated Selling Price",
+            f"₹{predicted_price:.2f} Lakhs",
+            delta=None
+        )
+    
+    with col2:
+        st.metric(
+            "Current Showroom Price",
+            f"₹{present_price:.2f} Lakhs",
+            delta=None
+        )
+    
+    with col3:
+        st.metric(
+            "Total Depreciation",
+            f"₹{depreciation:.2f} Lakhs",
+            delta=f"-{depreciation_percent:.1f}%"
+        )
+    
+    # Gauge chart for price range
+    st.markdown("---")
+    st.subheader("Price Analysis")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Price range estimate (±10%)
+        lower_estimate = predicted_price * 0.9
+        upper_estimate = predicted_price * 1.1
+        
+        st.success(f"""
+        **Expected Price Range:** ₹{lower_estimate:.2f}L - ₹{upper_estimate:.2f}L
+        
+        This is the typical market range for similar vehicles.
+        """)
+        
+        # Price breakdown
+        st.write("**Price Factors:**")
+        
+        factors = []
+        
+        if car_age <= 2:
+            factors.append("Very new car - minimal depreciation")
+        elif car_age <= 5:
+            factors.append("Relatively new - good resale value")
+        elif car_age <= 10:
+            factors.append("Moderate age - average market value")
+        else:
+            factors.append("Older car - higher depreciation")
+        
+        if kms_driven < 30000:
+            factors.append("Low mileage - adds value")
+        elif kms_driven < 80000:
+            factors.append("Average mileage")
+        else:
+            factors.append("High mileage - reduces value")
+        
+        if transmission == 'Automatic':
+            factors.append("Automatic transmission - premium pricing")
+        
+        if fuel_type == 'Diesel':
+            factors.append("Diesel - preferred for high usage")
+        elif fuel_type == 'Petrol':
+            factors.append("Petrol - standard option")
+        
+        if seller_type == 'Dealer':
+            factors.append("Dealer - may offer better warranty")
+        
+        for factor in factors:
+            st.markdown(f"- {factor}")
+    
+    with col2:
+        # Gauge chart
+        max_price = present_price * 1.2
+        
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=predicted_price,
+            title={'text': "Estimated Price"},
+            number={'prefix': "₹", 'suffix': "L"},
+            gauge={
+                'axis': {'range': [None, max_price]},
+                'bar': {'color': "#e74c3c"},
+                'steps': [
+                    {'range': [0, present_price * 0.3], 'color': "lightgray"},
+                    {'range': [present_price * 0.3, present_price * 0.7], 'color': "lightyellow"},
+                    {'range': [present_price * 0.7, max_price], 'color': "lightgreen"}
+                ],
+                'threshold': {
+                    'line': {'color': "blue", 'width': 4},
+                    'thickness': 0.75,
+                    'value': present_price
                 }
-            ))
-            fig_gauge.update_layout(height=350, font={'color': "white", 'family': "Poppins"})
-            st.plotly_chart(fig_gauge, use_container_width=True)
-
-        # Enhanced Vehicle Summary
-        st.markdown("## Complete Vehicle Profile")
-        summary_col1, summary_col2 = st.columns(2)
-
-        with summary_col1:
-            st.info(f"Model Year: {year} ({car_age} years old)")
-            st.info(f"Odometer: {km_driven:,} KM")
-            st.info(f"Fuel: {fuel_type}")
-            st.info(f"Drivetrain: {transmission}")
-
-        with summary_col2:
-            st.info(f"Ownership: {owner} previous owner(s)")
-            st.info(f"Seller: {seller_type}")
-            st.info(f"Original MSRP: ₹{present_price:.1f} Lakhs")
-            st.info(f"AI Valuation: ₹{predicted_price:.1f} Lakhs")
-
-        # Pro Selling Tips
-        st.markdown("## Pro Selling Strategies")
-        tips = [
-            "Clean exterior & interior thoroughly",
-            "Get full service history & records",
-            "Take 20+ high-quality photos",
-            "Be transparent about maintenance",
-            f"Price at ₹{confidence_low:.1f}L initially",
-            "Offer test drive with full tank"
-        ]
-        for tip in tips:
-            st.markdown(f"- {tip}")
-
-    except KeyError as e:
-        st.error(f"Invalid selection: {e}")
-    except Exception as e:
-        st.error(f"Prediction error: {str(e)}")
-
+            }
+        ))
+        fig.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Car details summary
+    st.markdown("---")
+    st.subheader("Your Car Details")
+    
+    details_col1, details_col2 = st.columns(2)
+    
+    with details_col1:
+        st.write(f"**Manufacturing Year:** {year}")
+        st.write(f"**Car Age:** {car_age} years")
+        st.write(f"**Kilometers Driven:** {kms_driven:,} km")
+        st.write(f"**Fuel Type:** {fuel_type}")
+    
+    with details_col2:
+        st.write(f"**Transmission:** {transmission}")
+        st.write(f"**Seller Type:** {seller_type}")
+        st.write(f"**Previous Owners:** {owner}")
+        st.write(f"**Current Showroom Price:** ₹{present_price} Lakhs")
+    
+    # Tips for selling
+    st.markdown("---")
+    st.subheader("Tips to Get Better Price")
+    
+    
 else:
-    # Welcome screen with enhanced examples
-    st.markdown("## Quick Start Examples")
-    st.info("Adjust sliders in sidebar and click Predict Market Value")
+    # Initial page
+    st.markdown("---")
+    st.info("Enter your car details in the sidebar and click **Get Price Estimate**")
+    
+    # Show example cars
+    st.subheader("Example Valuations")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write("**Recent Car**")
+        st.write("Year: 2020")
+        st.write("Price: ₹8.5L")
+        st.write("Kms: 20,000")
+        st.write("Est: ₹6.5-7.5L")
+    
+    with col2:
+        st.write("**Mid-range Car**")
+        st.write("Year: 2015")
+        st.write("Price: ₹6.0L")
+        st.write("Kms: 50,000")
+        st.write("Est: ₹3.5-4.5L")
+    
+    with col3:
+        st.write("**Older Car**")
+        st.write("Year: 2010")
+        st.write("Price: ₹5.0L")
+        st.write("Kms: 100,000")
+        st.write("Est: ₹1.5-2.5L")
 
-    example_cols = st.columns(3)
-
-    with example_cols[0]:
-        st.markdown("Premium SUV")
-        st.metric("Original", "₹25L")
-        st.metric("AI Value", "₹19.5-22L")
-
-    with example_cols[1]:
-        st.markdown("Family Sedan")
-        st.metric("Original", "₹12L")
-        st.metric("AI Value", "₹7.8-9.2L")
-
-    with example_cols[2]:
-        st.markdown("Compact Hatch")
-        st.metric("Original", "₹6.5L")
-        st.metric("AI Value", "₹4.1-4.8L")
 
     st.markdown("---")
     st.markdown("## Model Specifications")
