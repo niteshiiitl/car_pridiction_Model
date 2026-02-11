@@ -72,7 +72,7 @@ car_age = current_year - year
 
 # Enhanced prediction button
 st.sidebar.markdown("---")
-predict_btn = st.sidebar.button("get price estimate", type = "primary, use_container_width =true)
+predict_btn = st.sidebar.button("get price estimate", type = "primary", use_container_width =true)
 
  if predict_btn:                               
     # Advanced encoding with error handling
